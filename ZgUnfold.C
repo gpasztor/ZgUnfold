@@ -19,16 +19,20 @@ int ZgUnfold(int which)
 //gSystem->Load("/opt/local/libexec/RooUnfold/libRooUnfold.so");
 gSystem->Load("libRooUnfold");
 
-const int nbinsD= 14;
-const int nbinsMC = 14;
+const int nbinsD= 11;
+const int nbinsMC = 11;
 const int nbinsDm = nbinsD-1;
 const int nbinsMCm = nbinsMC-1;
-const float xbinsD[nbinsD] = {15,20,25,30,35,40,45,50,55,60,70,80,100,120};
-const float xbinsMC[nbinsMC] = {15,20,25,30,35,40,45,50,55,60,70,80,100,120};
+const float xbinsD[nbinsD] = {15,20,25,30,35,40,60,90,120,500,1000};
+const float xbinsMC[nbinsMC] = {15,20,25,30,35,40,60,90,120,500,1000};
 
-float fakeRate0[nbinsDm] = {0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15};
-float fakeRate1[nbinsDm] = {0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15};
-float fakeRate[nbinsDm] = {0,0,0,0,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+float fakeRateB0[nbinsDm] = {0.138,0.167,0.141,0.166,0.183,0.204,0.160,0.103,0.083,0.083};
+float fakeRateB1[nbinsDm] = {0.118,0.115,0.113,0.139,0.174,0.192,0.149,0.066,0.104,0.104};
+// update
+float fakeRateE0[nbinsDm] = {0.138,0.167,0.141,0.166,0.183,0.204,0.160,0.103,0.083,0.083}; 
+float fakeRateE1[nbinsDm] = {0.118,0.115,0.113,0.139,0.174,0.192,0.149,0.066,0.104,0.104};
+//float fakeRate[nbinsDm] = {0,0,0,0,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+//float *fakeRate;
 
 TH1F *inHist = new TH1F("inHist","inHist", nbinsD-1, xbinsD);
 TH1F *inHistMC = new TH1F("inHistMC","inHistMC", nbinsD-1, xbinsD);
@@ -46,15 +50,15 @@ TFile *fileMC = 0;
 if (which == 0) {
   fileD = TFile::Open("13TeV_Zg/data_ch0.root");
   fileMC = TFile::Open("13TeV_Zg/mc_ch0.root");
-  for (int i=0;i<nbinsDm;i++){
-    fakeRate[i]=fakeRate0[i];
-  }
+  //for (int i=0;i<nbinsDm;i++){
+  //  fakeRate[i]=fakeRate0[i];
+  //}
 } else if (which == 1) {
   fileD = TFile::Open("13TeV_Zg/data_ch1.root");
   fileMC = TFile::Open("13TeV_Zg/mc_ch1.root");
-  for (int i=0;i<nbinsDm;i++){
-    fakeRate[i]=fakeRate1[i];
-  } 
+  //for (int i=0;i<nbinsDm;i++){
+  //  fakeRate[i]=fakeRate1[i];
+  //} 
 } else {
   cout << "Please input 0 or 1!" << endl;
 }
@@ -68,7 +72,8 @@ TTree *treeMC = (TTree*) fileMC->Get("tZg");
  
 float phoPtD,phoEtaD,phoSCEtaD,phoPhiD;
 float lepPtD,lepEtaD,lepSCEtaD,lepPhiD;
-float mllgD; 
+float mllgD;
+int isEBEED; 
 treeD->SetBranchAddress("phoPt",&phoPtD);
 treeD->SetBranchAddress("phoeEa",&phoEtaD);
 treeD->SetBranchAddress("phoSCEta",&phoSCEtaD);
@@ -78,10 +83,12 @@ treeD->SetBranchAddress("lepEta",&lepEtaD);
 treeD->SetBranchAddress("lepSCEta",&lepSCEtaD);
 treeD->SetBranchAddress("lepPhi",&lepPhiD);
 treeD->SetBranchAddress("mllg",&mllgD);
+treeD->SetBranchAddress("isEBEE",&isEBEED);
 
 float phoPtMC,phoEtaMC,phoSCEtaMC,phoPhiMC;
 float lepPtMC,lepEtaMC,lepSCEtaMC,lepPhiMC;
-float mllgMC; 
+float mllgMC;
+int isEBEEMC; 
 float mcPhoPtMC,mcPhoEtaMC,mcPhoPhiMC;
 float mcLepPtMC,mcLepEtaMC,mcLepPhiMC;
 float puwei,mcwei,genwei;
@@ -94,6 +101,7 @@ treeMC->SetBranchAddress("lepEta",&lepEtaMC);
 treeMC->SetBranchAddress("lepSCEta",&lepSCEtaMC);
 treeMC->SetBranchAddress("lepPhi",&lepPhiMC);
 treeMC->SetBranchAddress("mllg",&mllgMC);
+treeMC->SetBranchAddress("isEBEE",&isEBEEMC);
 treeMC->SetBranchAddress("mcPhoPt",&mcPhoPtMC);
 treeMC->SetBranchAddress("mcPhoEta",&mcPhoEtaMC);
 treeMC->SetBranchAddress("mcPhoPhi",&mcPhoPhiMC);
@@ -127,6 +135,16 @@ int nD = treeD->GetEntries();
 for (int i=0;i<nMC;i++){
   treeD->GetEntry(i);
   float w = 1.;
+  for (int j=0; j<nbinsDm; j++){
+    //cout << "j: " << j << " " << isEBEED << " " << fakeRateE0[j] << " " << fakeRateB0[j] << " " << fakeRateE1[j] << " " << fakeRateB1[j]<< endl;
+    if (phoPtD>xbinsD[j] && phoPtD<xbinsD[j+1]){
+        if (which == 0) {
+	  w = (isEBEED ? (1.-fakeRateE0[j]) : (1.-fakeRateB0[j]));
+	} else if {
+	  w = (isEBEED ? (1.-fakeRateE1[j]) : (1.-fakeRateB1[j]));
+	}
+    }
+  }
   inHist->Fill(Min(phoPtD,xbinsD[nbinsDm]-0.1), w);
 }
 
