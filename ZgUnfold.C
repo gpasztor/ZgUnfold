@@ -1,8 +1,16 @@
 //#define ZgUnfold_c
-//#include ZgUnfold.h
 
 //#include "RooUnfoldResponse.h"
 //#include "RooUnfoldBayes.h"
+
+/*
+#include "/home/rebeklill/RooUnfold/src/RooUnfoldResponse.h"
+#include "/home/rebeklill/RooUnfold/src/RooUnfoldBayes.h"
+#include "/home/rebeklill/RooUnfold/src/RooUnfoldSvd.h"
+#include "/home/rebeklill/RooUnfold/src/RooUnfoldBinByBin.h"
+#include "/home/rebeklill/RooUnfold/src/RooUnfoldTUnfold.h"
+#include "/home/rebeklill/root/include/TMath.h"
+*/
 
 #include "/opt/local/libexec/RooUnfold/src/RooUnfoldResponse.h"
 #include "/opt/local/libexec/RooUnfold/src/RooUnfoldBayes.h"
@@ -12,36 +20,61 @@
 
 using namespace TMath;
 
-//void ZgUnfold::MakeHistos(int which)
-int ZgUnfold(int which)
+int ZgUnfold(int which=0, int errorTreatment=3, bool smooth=false)
 {
 
-//gSystem->Load("/opt/local/libexec/RooUnfold/libRooUnfold.so");
 gSystem->Load("libRooUnfold");
+
+int lepMass=0;
+if(which==0) lepMass=0.000511;
+else if(which==1) lepMass=0.105658;
 
 const int nbinsD= 11;
 const int nbinsMC = 11;
-const int nbinsDm = nbinsD-1;
-const int nbinsMCm = nbinsMC-1;
 const float xbinsD[nbinsD] = {15,20,25,30,35,40,60,90,120,500,1000};
 const float xbinsMC[nbinsMC] = {15,20,25,30,35,40,60,90,120,500,1000};
 
-float fakeRateB0[nbinsDm] = {0.138,0.167,0.141,0.166,0.183,0.204,0.160,0.103,0.083,0.083};
-float fakeRateB1[nbinsDm] = {0.118,0.115,0.113,0.139,0.174,0.192,0.149,0.066,0.104,0.104};
-// update
-float fakeRateE0[nbinsDm] = {0.138,0.167,0.141,0.166,0.183,0.204,0.160,0.103,0.083,0.083}; 
-float fakeRateE1[nbinsDm] = {0.118,0.115,0.113,0.139,0.174,0.192,0.149,0.066,0.104,0.104};
-//float fakeRate[nbinsDm] = {0,0,0,0,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-//float *fakeRate;
+const int nbinsDm = nbinsD-1;
+const int nbinsMCm = nbinsMC-1;
+const float fakeRateB0[nbinsDm] = {0.138,0.167,0.141,0.166,0.183,0.204,0.160,0.103,0.083,0.083};
+const float fakeRateB1[nbinsDm] = {0.118,0.115,0.113,0.139,0.174,0.192,0.149,0.066,0.104,0.104};
+const float fakeRateE0[nbinsDm] = {0.304, 0.290,0.315,0.384,0.282,0.363,0.205,0.183,0.175,0.175}; 
+const float fakeRateE1[nbinsDm] = {0.276,0.250,0.241,0.269,0.337,0.373,0.235,0.126,0.083,0.083};
 
-TH1F *inHist = new TH1F("inHist","inHist", nbinsD-1, xbinsD);
-TH1F *inHistMC = new TH1F("inHistMC","inHistMC", nbinsD-1, xbinsD);
-TH1F *trueHistMC = new TH1F("trueHistMC","trueHistMC", nbinsMC-1, xbinsD);
-TH2F *responseMC = new TH2F("responseMC","responseMC", nbinsD-1, xbinsD, nbinsMC-1, xbinsMC);
-TH1F *outHist = new TH1F("outHist","outHist", nbinsMC-1, xbinsMC);
-TH1F *outHistMC = new TH1F("outHistMC","outHistMC", nbinsMC-1, xbinsMC);
+TH1F *inHist = new TH1F("inHist","inHist", nbinsDm, xbinsD);
+TH1F *inHistBkg = new TH1F("inHistBkg","inHistBkg", nbinsDm, xbinsD);
+TH1F *inHistMC = new TH1F("inHistMC","inHistMC", nbinsDm, xbinsD);
+TH1F *inHistMCBkg = new TH1F("inHistMCBkg","inHistMCBkg", nbinsDm, xbinsD);
+TH1F *inHistMCPhoBkg = new TH1F("inHistMCPhoBkg","inHistMCPhoBkg", nbinsDm, xbinsD);
+TH1F *trueHistMC = new TH1F("trueHistMC","trueHistMC", nbinsMCm, xbinsD);
+TH2F *responseMC = new TH2F("responseMC","responseMC", nbinsDm, xbinsD, nbinsMCm, xbinsMC);
+TH1F *outHist = new TH1F("outHist","outHist", nbinsMCm, xbinsMC);
+TH1F *outHistMC = new TH1F("outHistMC","outHistMC", nbinsMCm, xbinsMC);
+
+const int nbinsMassD= 12;
+const int nbinsMassMC = 12;
+const float xbinsMassD[nbinsMassD]={50,60,70,80,90,100,125,150,200,300,500,1000};
+const float xbinsMassMC[nbinsMassMC] = {50,60,70,80,90,100,125,150,200,300,500,1000};
+const int nbinsMassDm = nbinsMassD-1;
+const int nbinsMassMCm = nbinsMassMC-1;
+
+TH1F *inHistMass = new TH1F("inHistMass","inHistMass", nbinsMassDm, xbinsMassD);
+TH1F *inHistMassBkg = new TH1F("inHistMassBkg","inHistMassBkg", nbinsMassDm, xbinsMassD);
+TH1F *inHistMassMC = new TH1F("inHistMassMC","inHistMassMC", nbinsMassDm, xbinsMassD);
+TH1F *inHistMassMCBkg = new TH1F("inHistMassMCBkg","inHistMassMCBkg", nbinsMassDm, xbinsMassD);
+TH1F *inHistMassMCPhoBkg = new TH1F("inHistMassMCPhoBkg","inHistMassMCPhoBkg", nbinsMassDm, xbinsMassD);
+TH1F *trueHistMassMC = new TH1F("trueHistMassMC","trueHistMassMC", nbinsMassMCm, xbinsMassD);
+TH2F *responseMassMC = new TH2F("responseMassMC","responseMassMC", nbinsMassDm, xbinsMassD, nbinsMassMCm, xbinsMassMC);
+TH1F *outHistMass = new TH1F("outHistMass","outHistMass", nbinsMassMC-1, xbinsMassMC);
+TH1F *outHistMassMC = new TH1F("outHistMassMC","outHistMassMC", nbinsMassMCm, xbinsMassMC);
+
+TH1F *histCheckMC = new TH1F("histCheckMC","histCheckMC", nbinsMassDm, xbinsMassD);
+TH2F *hist2DCheckMC = new TH2F("hist2DCheckMC","hist2DCheckMC", nbinsMassDm, xbinsMassD, nbinsMassDm, xbinsMassD);
+TH1F *histCheck = new TH1F("histCheck","histCheck", nbinsMassDm, xbinsMassD);
+TH2F *hist2DCheck = new TH2F("hist2DCheck","hist2DCheck", nbinsMassDm, xbinsMassD, nbinsMassDm, xbinsMassD);
 
 RooUnfoldResponse response(inHist,outHist);
+RooUnfoldResponse responseMass(inHistMass,outHistMass);
 
 cout << "which: " << which << endl;
 
@@ -50,15 +83,9 @@ TFile *fileMC = 0;
 if (which == 0) {
   fileD = TFile::Open("13TeV_Zg/data_ch0.root");
   fileMC = TFile::Open("13TeV_Zg/mc_ch0.root");
-  //for (int i=0;i<nbinsDm;i++){
-  //  fakeRate[i]=fakeRate0[i];
-  //}
 } else if (which == 1) {
   fileD = TFile::Open("13TeV_Zg/data_ch1.root");
   fileMC = TFile::Open("13TeV_Zg/mc_ch1.root");
-  //for (int i=0;i<nbinsDm;i++){
-  //  fakeRate[i]=fakeRate1[i];
-  //} 
 } else {
   cout << "Please input 0 or 1!" << endl;
 }
@@ -71,7 +98,7 @@ TTree *treeD = (TTree*) fileD->Get("tZg");
 TTree *treeMC = (TTree*) fileMC->Get("tZg");
  
 float phoPtD,phoEtaD,phoSCEtaD,phoPhiD;
-float lepPtD,lepEtaD,lepSCEtaD,lepPhiD;
+float lepPtD[2],lepEtaD[2],lepSCEtaD[2],lepPhiD[2];
 float mllgD;
 int isEBEED; 
 treeD->SetBranchAddress("phoPt",&phoPtD);
@@ -86,12 +113,13 @@ treeD->SetBranchAddress("mllg",&mllgD);
 treeD->SetBranchAddress("isEBEE",&isEBEED);
 
 float phoPtMC,phoEtaMC,phoSCEtaMC,phoPhiMC;
-float lepPtMC,lepEtaMC,lepSCEtaMC,lepPhiMC;
+float lepPtMC[2],lepEtaMC[2],lepSCEtaMC[2],lepPhiMC[2];
 float mllgMC;
 int isEBEEMC; 
 float mcPhoPtMC,mcPhoEtaMC,mcPhoPhiMC;
-float mcLepPtMC,mcLepEtaMC,mcLepPhiMC;
+float mcLepPtMC[2],mcLepEtaMC[2],mcLepPhiMC[2];
 float puwei,mcwei,genwei;
+int processID;
 treeMC->SetBranchAddress("phoPt",&phoPtMC);
 treeMC->SetBranchAddress("phoEta",&phoEtaMC);
 treeMC->SetBranchAddress("phoSCEta",&phoSCEtaMC);
@@ -111,41 +139,104 @@ treeMC->SetBranchAddress("mcLepPhi",&mcLepPhiMC);
 treeMC->SetBranchAddress("puwei",&puwei);
 treeMC->SetBranchAddress("mcwei",&mcwei);
 treeMC->SetBranchAddress("genwei",&genwei);
+treeMC->SetBranchAddress("processID",&processID);
  
+//TH1F* inHistProj; 
+//TH1F* inHistMCProj; 
+//TH1F* trueHistMCProj; 
+//TH2F* responseMCProj; 
 treeD->Project("inHistProj","phoPt");   
 treeMC->Project("inHistMCProj","phoPt","(puwei*mcwei*genwei)*(1)");   
 treeMC->Project("trueHistMCProj","mcPhoPt","(puwei*mcwei*genwei)*(1)");   
-treeMC->Project("responseMCProj","phoPt:mcPhoPt","(puwei*mcwei*genwei)*(1)");   
+treeMC->Project("responseMCProj","phoPt:mcPhoPt","(puwei*mcwei*genwei)*(1)");
+//TH1F* inHistMassProj; 
+//TH1F* inHistMassMCProj; 
+//TH1F* trueHistMassMCProj; 
+//TH2F* responseMassMCProj; 
+treeD->Project("inHistMassProj","mllg");   
+treeMC->Project("inHistMassMCProj","mllg","(puwei*mcwei*genwei)*(1)");   
+//treeMC->Project("trueHistMassMCProj","???","(puwei*mcwei*genwei)*(1)");   
+//treeMC->Project("responseMassMCProj","mllg:???","(puwei*mcwei*genwei)*(1)");
 
 int nMC = treeMC->GetEntries();
 for (int i=0;i<nMC;i++){
   treeMC->GetEntry(i);
+  inHistMCBkg->Fill(Min((float)phoPtMC,(float)(xbinsD[nbinsDm]-0.1)),puwei*mcwei*genwei);
+  inHistMassMCBkg->Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);
   if(mcPhoPtMC<0) continue;
-  inHistMC->Fill(Min(phoPtMC,xbinsD[nbinsDm]-0.1),puwei*mcwei*genwei);
-  trueHistMC->Fill(Min(mcPhoPtMC,xbinsMC[nbinsMCm]-0.1),puwei*mcwei*genwei);
-  responseMC->Fill(Min(phoPtMC,xbinsD[nbinsDm]-0.1),Min(mcPhoPtMC,xbinsMC[nbinsMCm]-0.1),puwei*mcwei*genwei);
+  inHistMCPhoBkg->Fill(Min((float)phoPtMC,(float)(xbinsD[nbinsDm]-0.1)),puwei*mcwei*genwei);
+  inHistMassMCPhoBkg->Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);  
+  if(processID!=1) continue;
+  inHistMC->Fill(Min((float)phoPtMC,(float)(xbinsD[nbinsDm]-0.1)),puwei*mcwei*genwei);
+  trueHistMC->Fill(Min((float)mcPhoPtMC,(float)(xbinsMC[nbinsMCm]-0.1)),puwei*mcwei*genwei);
+  responseMC->Fill(Min((float)phoPtMC,(float)(xbinsD[nbinsDm]-0.1)),Min((float)mcPhoPtMC,(float)(xbinsMC[nbinsMCm]-0.1)),puwei*mcwei*genwei);
+  
+  inHistMassMC->Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);
+  TLorentzVector mcLep1MC;
+  mcLep1MC.SetPtEtaPhiM(mcLepPtMC[0], mcLepEtaMC[0], mcLepPhiMC[0], lepMass);
+  TLorentzVector mcLep2MC;
+  mcLep2MC.SetPtEtaPhiM(mcLepPtMC[1], mcLepEtaMC[1], mcLepPhiMC[1], lepMass);			
+  TLorentzVector mcPhoMC;
+  mcPhoMC.SetPtEtaPhiM(mcPhoPtMC, mcPhoEtaMC, mcPhoPhiMC, 0);
+  TLorentzVector mcPhoDiLep;
+  mcPhoDiLep=mcLep1MC+mcLep2MC+mcPhoMC;
+  trueHistMassMC->Fill(Min((float)mcPhoDiLep.M(),(float)(xbinsMassMC[nbinsMassMCm]-0.1)),puwei*mcwei*genwei);
+  responseMassMC->Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsMassDm]-0.1)),Min((float)mcPhoDiLep.M(),(float)(xbinsMassMC[nbinsMassMCm]-0.1)),puwei*mcwei*genwei);
+
+  TLorentzVector lep1MC;
+  lep1MC.SetPtEtaPhiM(lepPtMC[0], lepEtaMC[0], lepPhiMC[0], lepMass);
+  TLorentzVector lep2MC;
+  lep2MC.SetPtEtaPhiM(lepPtMC[1], lepEtaMC[1], lepPhiMC[1], lepMass);			
+  TLorentzVector phoMC;
+  phoMC.SetPtEtaPhiM(phoPtMC, phoEtaMC, phoPhiMC, 0);
+  TLorentzVector phoDiLepMC;
+  phoDiLepMC=lep1MC+lep2MC+phoMC;
+  histCheckMC->Fill(Min((float)phoDiLepMC.M(),(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);
+  hist2DCheckMC->Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsMassDm]-0.1)),Min((float)phoDiLepMC.M(),(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);
+  
   //check selection!!!!
-  if(true) response.Fill(Min(phoPtMC,xbinsD[nbinsDm]-0.1),Min(mcPhoPtMC,xbinsMC[nbinsMCm]-0.1),puwei*mcwei*genwei);
-  else response.Miss(Min(mcPhoPtMC,xbinsMC[nbinsMCm]-0.1),puwei*mcwei*genwei);
+  if(true) response.Fill(Min((float)phoPtMC,(float)(xbinsD[nbinsDm]-0.1)),Min((float)mcPhoPtMC,(float)(xbinsMC[nbinsMCm]-0.1)),puwei*mcwei*genwei);
+  else response.Miss(Min((float)mcPhoPtMC,(float)(xbinsMC[nbinsMCm]-0.1)),puwei*mcwei*genwei);
+  if(true) responseMass.Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsDm]-0.1)),Min((float)mcPhoDiLep.M(),(float)(xbinsMassMC[nbinsMCm]-0.1)),puwei*mcwei*genwei);
+  else responseMass.Miss(Min((float)mcPhoDiLep.M(),(float)(xbinsMassMC[nbinsMCm]-0.1)),puwei*mcwei*genwei);
 }
-//TH2F* responseM = (TH2F*) response.Hresponse();
-responseM = (TH2F*) response.Hresponse();
+
+TH2F* responseM = (TH2F*) response.Hresponse();
+TH2F* responseMassM = (TH2F*) responseMass.Hresponse();
+
+//RooUnfoldResponse response (inHistMC, trueHistMC, responseMC, "Response", "Response");
 
 int nD = treeD->GetEntries();
-for (int i=0;i<nMC;i++){
+for (int i=0;i<nD;i++){
   treeD->GetEntry(i);
   float w = 1.;
   for (int j=0; j<nbinsDm; j++){
     //cout << "j: " << j << " " << isEBEED << " " << fakeRateE0[j] << " " << fakeRateB0[j] << " " << fakeRateE1[j] << " " << fakeRateB1[j]<< endl;
-    if (phoPtD>xbinsD[j] && phoPtD<xbinsD[j+1]){
-        if (which == 0) {
-	  w = (isEBEED ? (1.-fakeRateE0[j]) : (1.-fakeRateB0[j]));
-	} else if {
-	  w = (isEBEED ? (1.-fakeRateE1[j]) : (1.-fakeRateB1[j]));
-	}
+    if ((phoPtD>xbinsD[j]) && (phoPtD<xbinsD[j+1])){
+      if (which == 0) {
+	w = (isEBEED ? (1.-fakeRateE0[j]) : (1.-fakeRateB0[j]));
+      } else if (which ==1){
+	w = (isEBEED ? (1.-fakeRateE1[j]) : (1.-fakeRateB1[j]));
+      }
     }
   }
-  inHist->Fill(Min(phoPtD,xbinsD[nbinsDm]-0.1), w);
+  
+  inHist->Fill(Min((float)phoPtD,(float)(xbinsD[nbinsDm]-0.1)), w);
+  inHistMass->Fill(Min((float)mllgD,(float)(xbinsMassD[nbinsMassDm]-0.1)), w);
+  inHistBkg->Fill(Min((float)phoPtD,(float)(xbinsD[nbinsDm]-0.1)));
+  inHistMassBkg->Fill(Min((float)mllgD,(float)(xbinsMassD[nbinsMassDm]-0.1)));
+
+  TLorentzVector lep1;
+  lep1.SetPtEtaPhiM(lepPtD[0], lepEtaD[0], lepPhiD[0], lepMass);
+  TLorentzVector lep2;
+  lep2.SetPtEtaPhiM(lepPtD[1], lepEtaD[1], lepPhiD[1], lepMass);			
+  TLorentzVector pho;
+  pho.SetPtEtaPhiM(phoPtD, phoEtaD, phoPhiD, 0);
+  TLorentzVector phoDiLep;
+  phoDiLep=lep1+lep2+pho;
+  histCheck->Fill(Min((float)phoDiLep.M(),(float)(xbinsMassD[nbinsMassDm]-0.1)),w);
+  hist2DCheck->Fill(Min((float)mllgD,(float)(xbinsMassD[nbinsMassDm]-0.1)),Min((float)phoDiLep.M(),(float)(xbinsMassD[nbinsMassDm]-0.1)),w);
+
 }
 
 RooUnfoldBinByBin unfoldBinByBinD(&response,inHist);
@@ -166,59 +257,189 @@ RooUnfoldSvd unfoldSvd5D(&response,inHist,5);
 RooUnfoldSvd unfoldSvd5MC(&response,inHistMC,5);
 RooUnfoldSvd unfoldSvd8D(&response,inHist,8);
 RooUnfoldSvd unfoldSvd8MC(&response,inHistMC,8);
-RooUnfoldSvd unfoldSvd11D(&response,inHist,11);
-RooUnfoldSvd unfoldSvd11MC(&response,inHistMC,11);
+RooUnfoldSvd unfoldSvd10D(&response,inHist,10);
+RooUnfoldSvd unfoldSvd10MC(&response,inHistMC,10);
 
-outHistBinByBin = (TH1F*) unfoldBinByBinD.Hreco();
-outHistBinByBinMC = (TH1F*) unfoldBinByBinMC.Hreco();
-outHistBayes1 = (TH1F*) unfoldBayes1D.Hreco();
-outHistBayes1MC = (TH1F*) unfoldBayes1MC.Hreco();
-outHistBayes2 = (TH1F*) unfoldBayes2D.Hreco();
-outHistBayes2MC = (TH1F*) unfoldBayes2MC.Hreco();
-outHistBayes3 = (TH1F*) unfoldBayes3D.Hreco();
-outHistBayes3MC = (TH1F*) unfoldBayes3MC.Hreco();
-outHistBayes4 = (TH1F*) unfoldBayes4D.Hreco();
-outHistBayes4MC = (TH1F*) unfoldBayes4MC.Hreco();
-outHistBayes5 = (TH1F*) unfoldBayes5D.Hreco();
-outHistBayes5MC = (TH1F*) unfoldBayes5MC.Hreco();
-outHistSvd2 = (TH1F*) unfoldSvd2D.Hreco();
-outHistSvd2MC = (TH1F*) unfoldSvd2MC.Hreco();
-outHistSvd5 = (TH1F*) unfoldSvd5D.Hreco();
-outHistSvd5MC = (TH1F*) unfoldSvd5MC.Hreco();
-outHistSvd8 = (TH1F*) unfoldSvd8D.Hreco();
-outHistSvd8MC = (TH1F*) unfoldSvd8MC.Hreco();
-outHistSvd11 = (TH1F*) unfoldSvd11D.Hreco();
-outHistSvd11MC = (TH1F*) unfoldSvd11MC.Hreco();
+RooUnfoldBinByBin unfoldMassBinByBinD(&responseMass,inHistMass);
+RooUnfoldBinByBin unfoldMassBinByBinMC(&responseMass,inHistMassMC);
+RooUnfoldBayes unfoldMassBayes1D(&responseMass,inHistMass,1,smooth);
+RooUnfoldBayes unfoldMassBayes1MC(&responseMass,inHistMassMC,1,smooth);
+RooUnfoldBayes unfoldMassBayes2D(&responseMass,inHistMass,2,smooth);
+RooUnfoldBayes unfoldMassBayes2MC(&responseMass,inHistMassMC,2,smooth);
+RooUnfoldBayes unfoldMassBayes3D(&responseMass,inHistMass,3,smooth);
+RooUnfoldBayes unfoldMassBayes3MC(&responseMass,inHistMassMC,3,smooth);
+RooUnfoldBayes unfoldMassBayes4D(&responseMass,inHistMass,4,smooth);
+RooUnfoldBayes unfoldMassBayes4MC(&responseMass,inHistMassMC,4,smooth);
+RooUnfoldBayes unfoldMassBayes5D(&responseMass,inHistMass,5,smooth);
+RooUnfoldBayes unfoldMassBayes5MC(&responseMass,inHistMassMC,5,smooth);
+RooUnfoldSvd unfoldMassSvd2D(&responseMass,inHistMass,2);
+RooUnfoldSvd unfoldMassSvd2MC(&responseMass,inHistMassMC,2);
+RooUnfoldSvd unfoldMassSvd5D(&responseMass,inHistMass,5);
+RooUnfoldSvd unfoldMassSvd5MC(&responseMass,inHistMassMC,5);
+RooUnfoldSvd unfoldMassSvd8D(&responseMass,inHistMass,8);
+RooUnfoldSvd unfoldMassSvd8MC(&responseMass,inHistMassMC,8);
+RooUnfoldSvd unfoldMassSvd10D(&responseMass,inHistMass,10);
+RooUnfoldSvd unfoldMassSvd10MC(&responseMass,inHistMassMC,10);
 
-TCanvas *zgInP = new TCanvas("zgInP","zgInP",700,500);
-zgInP->Divide(3,2);
-zgInP->cd(1);
-inHist->Draw();
-zgInP->cd(2);
+TH1F* outHistBinByBin = (TH1F*) unfoldBinByBinD.Hreco(errorTreatment);
+TH1F* outHistBinByBinMC = (TH1F*) unfoldBinByBinMC.Hreco(errorTreatment);
+TH1F* outHistBayes1 = (TH1F*) unfoldBayes1D.Hreco(errorTreatment);
+TH1F* outHistBayes1MC = (TH1F*) unfoldBayes1MC.Hreco(errorTreatment);
+TH1F* outHistBayes2 = (TH1F*) unfoldBayes2D.Hreco(errorTreatment);
+TH1F* outHistBayes2MC = (TH1F*) unfoldBayes2MC.Hreco(errorTreatment);
+TH1F* outHistBayes3 = (TH1F*) unfoldBayes3D.Hreco(errorTreatment);
+TH1F* outHistBayes3MC = (TH1F*) unfoldBayes3MC.Hreco(errorTreatment);
+TH1F* outHistBayes4 = (TH1F*) unfoldBayes4D.Hreco(errorTreatment);
+TH1F* outHistBayes4MC = (TH1F*) unfoldBayes4MC.Hreco(errorTreatment);
+TH1F* outHistBayes5 = (TH1F*) unfoldBayes5D.Hreco(errorTreatment);
+TH1F* outHistBayes5MC = (TH1F*) unfoldBayes5MC.Hreco(errorTreatment);
+TH1F* outHistSvd2 = (TH1F*) unfoldSvd2D.Hreco(errorTreatment);
+TH1F* outHistSvd2MC = (TH1F*) unfoldSvd2MC.Hreco(errorTreatment);
+TH1F* outHistSvd5 = (TH1F*) unfoldSvd5D.Hreco(errorTreatment);
+TH1F* outHistSvd5MC = (TH1F*) unfoldSvd5MC.Hreco(errorTreatment);
+TH1F* outHistSvd8 = (TH1F*) unfoldSvd8D.Hreco(errorTreatment);
+TH1F* outHistSvd8MC = (TH1F*) unfoldSvd8MC.Hreco(errorTreatment);
+TH1F* outHistSvd10 = (TH1F*) unfoldSvd10D.Hreco(errorTreatment);
+TH1F* outHistSvd10MC = (TH1F*) unfoldSvd10MC.Hreco(errorTreatment);
+
+TH1F* outHistMassBinByBin = (TH1F*) unfoldMassBinByBinD.Hreco(errorTreatment);
+TH1F* outHistMassBinByBinMC = (TH1F*) unfoldMassBinByBinMC.Hreco(errorTreatment);
+TH1F* outHistMassBayes1 = (TH1F*) unfoldMassBayes1D.Hreco(errorTreatment);
+TH1F* outHistMassBayes1MC = (TH1F*) unfoldMassBayes1MC.Hreco(errorTreatment);
+TH1F* outHistMassBayes2 = (TH1F*) unfoldMassBayes2D.Hreco(errorTreatment);
+TH1F* outHistMassBayes2MC = (TH1F*) unfoldMassBayes2MC.Hreco(errorTreatment);
+TH1F* outHistMassBayes3 = (TH1F*) unfoldMassBayes3D.Hreco(errorTreatment);
+TH1F* outHistMassBayes3MC = (TH1F*) unfoldMassBayes3MC.Hreco(errorTreatment);
+TH1F* outHistMassBayes4 = (TH1F*) unfoldMassBayes4D.Hreco(errorTreatment);
+TH1F* outHistMassBayes4MC = (TH1F*) unfoldMassBayes4MC.Hreco(errorTreatment);
+TH1F* outHistMassBayes5 = (TH1F*) unfoldMassBayes5D.Hreco(errorTreatment);
+TH1F* outHistMassBayes5MC = (TH1F*) unfoldMassBayes5MC.Hreco(errorTreatment);
+TH1F* outHistMassSvd2 = (TH1F*) unfoldMassSvd2D.Hreco(errorTreatment);
+TH1F* outHistMassSvd2MC = (TH1F*) unfoldMassSvd2MC.Hreco(errorTreatment);
+TH1F* outHistMassSvd5 = (TH1F*) unfoldMassSvd5D.Hreco(errorTreatment);
+TH1F* outHistMassSvd5MC = (TH1F*) unfoldMassSvd5MC.Hreco(errorTreatment);
+TH1F* outHistMassSvd8 = (TH1F*) unfoldMassSvd8D.Hreco(errorTreatment);
+TH1F* outHistMassSvd8MC = (TH1F*) unfoldMassSvd8MC.Hreco(errorTreatment);
+TH1F* outHistMassSvd10 = (TH1F*) unfoldMassSvd10D.Hreco(errorTreatment);
+TH1F* outHistMassSvd10MC = (TH1F*) unfoldMassSvd10MC.Hreco(errorTreatment);
+
+TCanvas *ZgIn = new TCanvas("ZgIn","ZgIn",700,500);
+ZgIn->Divide(3,2);
+ZgIn->cd(1);
+gPad->SetLogx();
+inHistMCBkg->SetLineColor(kBlack);
+inHistMCBkg->SetLineStyle(kDashed);
+inHistMCBkg->Draw("same");
+inHistMCPhoBkg->SetLineColor(kGreen);
+inHistMCPhoBkg->SetLineStyle(kDashed);
+inHistMCPhoBkg->Draw("same");
+inHistMC->SetLineColor(kRed);
+inHistMC->SetLineStyle(kDashed);
+inHistMC->Draw("same");
+inHistBkg->Draw("same");
+inHist->SetLineColor(kGreen);
+inHist->Draw("same");
+ZgIn->cd(2);
+gPad->SetLogx();
 inHistMC->Draw();
-zgInP->cd(4);
+ZgIn->cd(4);
+gPad->SetLogx();
 trueHistMC->Draw();
-zgInP->cd(5);
+ZgIn->cd(5);
+gPad->SetLogx();
+gPad->SetLogy();
 responseMC->Draw("text");
-zgInP->cd(6);
-responseM->Draw("text");
-zgInP->Print("ZgUnfold_input.pdf");
+ZgIn->cd(6);
+gPad->SetLogx();
+gPad->SetLogy();
+responseM->Draw("box");
+ZgIn->Print("ZgUnfold_input.pdf");
 
-TCanvas *zgIn = new TCanvas("zgIn","zgIn",500,500);
-zgIn->Divide(2,2);
-zgIn->cd(1);
+TCanvas *ZgInM = new TCanvas("ZgInM","ZgInM",700,500);
+ZgInM->Divide(3,2);
+ZgInM->cd(1);
+//gPad->SetLogx();
+inHistMassMCBkg->SetLineColor(kBlack);
+inHistMassMCBkg->SetLineStyle(kDashed);
+inHistMassMCBkg->Draw("same");
+inHistMassMCPhoBkg->SetLineColor(kGreen);
+inHistMassMCPhoBkg->SetLineStyle(kDashed);
+inHistMassMCPhoBkg->Draw("same");
+inHistMassMC->SetLineColor(kRed);
+inHistMassMC->SetLineStyle(kDashed);
+inHistMassMC->Draw("same");
+inHistMassBkg->Draw("same");
+inHistMass->SetLineColor(kGreen);
+inHistMass->Draw("same");
+ZgInM->cd(2);
+//gPad->SetLogx();
+inHistMassMC->Draw();
+ZgInM->cd(4);
+//gPad->SetLogx();
+trueHistMassMC->Draw();
+ZgInM->cd(5);
+//gPad->SetLogx();
+//gPad->SetLogy();
+responseMassMC->Draw("text");
+ZgInM->cd(6);
+//gPad->SetLogx();
+//gPad->SetLogy();
+responseMassM->Draw("box");
+ZgInM->Print("ZgUnfold_inputMass.pdf");
+
+TCanvas *ZgInP = new TCanvas("ZgInP","ZgInP",500,500);
+ZgInP->Divide(2,2);
+ZgInP->cd(1);
+//gPad->SetLogx();
 inHistProj->Draw();
-zgIn->cd(2);
+ZgInP->cd(2);
+//gPad->SetLogx();
 inHistMCProj->Draw();
-zgIn->cd(3);
+ZgInP->cd(3);
+//gPad->SetLogx();
 trueHistMCProj->Draw();
-zgIn->cd(4);
+ZgInP->cd(4);
+//gPad->SetLogx();
+//gPad->SetLogy();
 responseMCProj->Draw("text");
-zgIn->Print("ZgUnfold_input_projections.pdf");
+ZgInP->Print("ZgUnfold_input_projections.pdf");
+
+TCanvas *ZgInMP = new TCanvas("ZgInMP","ZgInMP",500,700);
+ZgInMP->Divide(3,2);
+ZgInMP->cd(1);
+//gPad->SetLogx();
+inHistMassProj->Draw();
+ZgInMP->cd(2);
+//gPad->SetLogx();
+inHistMassMCProj->Draw();
+ZgInMP->cd(3);
+//gPad->SetLogx();
+//trueHistMassMCProj->Draw();
+histCheckMC->Draw();
+inHistMassMC->SetLineColor(2);
+inHistMassMC->SetLineStyle(2);
+inHistMassMC->Draw("same");
+ZgInMP->cd(4);
+//gPad->SetLogx();
+//gPad->SetLogy();
+//responseMassMCProj->Draw("text");
+hist2DCheckMC->Draw();
+ZgInMP->cd(5);
+//gPad->SetLogx();
+histCheck->Draw();
+inHistMass->SetLineColor(2);
+inHistMass->SetLineStyle(2);
+inHistMass->Draw("same");
+ZgInMP->cd(6);
+//gPad->SetLogx();
+//gPad->SetLogy();
+hist2DCheck->Draw();
+ZgInMP->Print("ZgUnfold_inputMass_projections.pdf");
 
 TCanvas *zg = new TCanvas("zg","zg",700,700);
 //zg->Divide(2,2);
 //zg->cd(1);
+gPad->SetLogx();
 inHistMC->SetLineWidth(3);
 inHistMC->SetLineStyle(kDashed);
 inHistMC->SetLineColor(kBlack);
@@ -263,10 +484,10 @@ outHistSvd8MC->SetLineWidth(3);
 outHistSvd8MC->SetLineStyle(kDotted);
 outHistSvd8MC->SetLineColor(kRed-9);
 outHistSvd8MC->Draw("same");
-outHistSvd11MC->SetLineWidth(3);
-outHistSvd11MC->SetLineStyle(kDotted);
-outHistSvd11MC->SetLineColor(kOrange);
-outHistSvd11MC->Draw("same");
+outHistSvd10MC->SetLineWidth(3);
+outHistSvd10MC->SetLineStyle(kDotted);
+outHistSvd10MC->SetLineColor(kOrange);
+outHistSvd10MC->Draw("same");
 
 TLegend *leg = new TLegend(0.7,0.3,0.9,0.7,NULL,"brNDC");
 leg->SetTextFont(62);
@@ -279,58 +500,391 @@ TLegendEntry *entry=leg->AddEntry("inHistMC","inHistMC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDashed);
 entry->SetLineColor(kBlack);
-TLegendEntry *entry=leg->AddEntry("trueHistMC","trueHistMC","L");
+entry=leg->AddEntry("trueHistMC","trueHistMC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kSolid);
 entry->SetLineColor(kBlack);
-TLegendEntry *entry=leg->AddEntry("outHistBinByBinMC","outHistBinByBinMC","L");
+entry=leg->AddEntry("outHistBinByBinMC","outHistBinByBinMC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDashed);
 entry->SetLineColor(kGreen);
-TLegendEntry *entry=leg->AddEntry("outHistBayes1MC","outHistBayes1MC","L");
+entry=leg->AddEntry("outHistBayes1MC","outHistBayes1MC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDotted);
 entry->SetLineColor(kBlue+3);
-TLegendEntry *entry=leg->AddEntry("outHistBayes2MC","outHistBayes2MC","L");
+entry=leg->AddEntry("outHistBayes2MC","outHistBayes2MC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDotted);
 entry->SetLineColor(kBlue);
-TLegendEntry *entry=leg->AddEntry("outHistBayes3MC","outHistBayes3MC","L");
+entry=leg->AddEntry("outHistBayes3MC","outHistBayes3MC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDotted);
 entry->SetLineColor(kBlue-7);
-TLegendEntry *entry=leg->AddEntry("outHistBayes4MC","outHistBayes4MC","L");
+entry=leg->AddEntry("outHistBayes4MC","outHistBayes4MC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDotted);
 entry->SetLineColor(kMagenta);
-TLegendEntry *entry=leg->AddEntry("outHistBayes5MC","outHistBayes5MC","L");
+entry=leg->AddEntry("outHistBayes5MC","outHistBayes5MC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDotted);
 entry->SetLineColor(kMagenta-9);
-TLegendEntry *entry=leg->AddEntry("outHistSvd2MC","outHistSvd2MC","L");
+entry=leg->AddEntry("outHistSvd2MC","outHistSvd2MC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDotted);
 entry->SetLineColor(kRed+2);
-TLegendEntry *entry=leg->AddEntry("outHistSvd5MC","outHistSvd5MC","L");
+entry=leg->AddEntry("outHistSvd5MC","outHistSvd5MC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDotted);
 entry->SetLineColor(kRed);
-TLegendEntry *entry=leg->AddEntry("outHistSvd8MC","outHistSvd8MC","L");
+entry=leg->AddEntry("outHistSvd8MC","outHistSvd8MC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDotted);
 entry->SetLineColor(kRed-9);
-TLegendEntry *entry=leg->AddEntry("outHistSvd11MC","outHistSvd11MC","L");
+entry=leg->AddEntry("outHistSvd10MC","outHistSvd10MC","L");
 entry->SetLineWidth(3);
 entry->SetLineStyle(kDotted);
 entry->SetLineColor(kOrange);
 leg->Draw();
 
-//outHist->SetLineColor(2);
-//outHist->Draw("same");
-//inHist->SetLineColor(3);
-//inHist->Draw("same");
-
 zg->Print("ZgUnfold_output.pdf");
+
+
+TCanvas *zgM = new TCanvas("zgM","zgM",700,700);
+//zgM->Divide(2,2);
+//zgM->cd(1);
+gPad->SetLogx();
+trueHistMassMC->SetLineWidth(3);
+trueHistMassMC->SetLineStyle(kSolid);
+trueHistMassMC->SetLineColor(kBlack);
+trueHistMassMC->Draw();
+inHistMassMC->SetLineWidth(3);
+inHistMassMC->SetLineStyle(kDashed);
+inHistMassMC->SetLineColor(kBlack);
+inHistMassMC->Draw("same");
+outHistMassBinByBinMC->SetLineWidth(3);
+outHistMassBinByBinMC->SetLineStyle(kDashed);
+outHistMassBinByBinMC->SetLineColor(kGreen);
+outHistMassBinByBinMC->Draw("same");
+outHistMassBayes1MC->SetLineWidth(3);
+outHistMassBayes1MC->SetLineStyle(kDotted);
+outHistMassBayes1MC->SetLineColor(kBlue+3);
+outHistMassBayes1MC->Draw("same");
+outHistMassBayes2MC->SetLineWidth(3);
+outHistMassBayes2MC->SetLineStyle(kDotted);
+outHistMassBayes2MC->SetLineColor(kBlue);
+outHistMassBayes2MC->Draw("same");
+outHistMassBayes3MC->SetLineWidth(3);
+outHistMassBayes3MC->SetLineStyle(kDotted);
+outHistMassBayes3MC->SetLineColor(kBlue-7);
+outHistMassBayes3MC->Draw("same");
+outHistMassBayes4MC->SetLineWidth(3);
+outHistMassBayes4MC->SetLineStyle(kDotted);
+outHistMassBayes4MC->SetLineColor(kMagenta);
+outHistMassBayes4MC->Draw("same");
+outHistMassBayes5MC->SetLineWidth(3);
+outHistMassBayes5MC->SetLineStyle(kDotted);
+outHistMassBayes5MC->SetLineColor(kMagenta-9);
+outHistMassBayes5MC->Draw("same");
+outHistMassSvd2MC->SetLineWidth(3);
+outHistMassSvd2MC->SetLineStyle(kDotted);
+outHistMassSvd2MC->SetLineColor(kRed+2);
+outHistMassSvd2MC->Draw("same");
+outHistMassSvd5MC->SetLineWidth(3);
+outHistMassSvd5MC->SetLineStyle(kDotted);
+outHistMassSvd5MC->SetLineColor(kRed);
+outHistMassSvd5MC->Draw("same");
+outHistMassSvd8MC->SetLineWidth(3);
+outHistMassSvd8MC->SetLineStyle(kDotted);
+outHistMassSvd8MC->SetLineColor(kRed-9);
+outHistMassSvd8MC->Draw("same");
+outHistMassSvd10MC->SetLineWidth(3);
+outHistMassSvd10MC->SetLineStyle(kDotted);
+outHistMassSvd10MC->SetLineColor(kOrange);
+outHistMassSvd10MC->Draw("same");
+
+TLegend *leg = new TLegend(0.7,0.3,0.9,0.7,NULL,"brNDC");
+leg->SetTextFont(62);
+leg->SetLineColor(0);
+leg->SetLineStyle(1);
+leg->SetLineWidth(1);
+leg->SetFillColor(19);
+leg->SetFillStyle(0);
+TLegendEntry *entry=leg->AddEntry("inHistMassMC","inHistMassMC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("trueHistMassMC","trueHistMassMC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kSolid);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("outHistMassBinByBinMC","outHistMassBinByBinMC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kGreen);
+entry=leg->AddEntry("outHistMassBayes1MC","outHistMassBayes1MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kBlue+3);
+entry=leg->AddEntry("outHistMassBayes2MC","outHistMassBayes2MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kBlue);
+entry=leg->AddEntry("outHistMassBayes3MC","outHistMassBayes3MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kBlue-7);
+entry=leg->AddEntry("outHistMassBayes4MC","outHistMassBayes4MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kMagenta);
+entry=leg->AddEntry("outHistMassBayes5MC","outHistMassBayes5MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kMagenta-9);
+entry=leg->AddEntry("outHistMassSvd2MC","outHistMassSvd2MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kRed+2);
+entry=leg->AddEntry("outHistMassSvd5MC","outHistMassSvd5MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kRed);
+entry=leg->AddEntry("outHistMassSvd8MC","outHistMassSvd8MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kRed-9);
+entry=leg->AddEntry("outHistMassSvd10MC","outHistMassSvd10MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kOrange);
+leg->Draw();
+
+zgM->Print("ZgUnfold_outputMass.pdf");
+
+TCanvas *zgD = new TCanvas("zgD","zgD",700,700);
+//zg->Divide(2,2);
+//zg->cd(1);
+gPad->SetLogx();
+inHistBkg->SetLineWidth(3);
+inHistBkg->SetLineStyle(kSolid);
+inHistBkg->SetLineColor(kBlack);
+inHistBkg->Draw();
+inHist->SetLineWidth(3);
+inHist->SetLineStyle(kDashed);
+inHist->SetLineColor(kBlack);
+inHist->Draw("same");
+outHistBinByBin->SetLineWidth(3);
+outHistBinByBin->SetLineStyle(kDashed);
+outHistBinByBin->SetLineColor(kGreen);
+outHistBinByBin->Draw("same");
+outHistBayes1->SetLineWidth(3);
+outHistBayes1->SetLineStyle(kDotted);
+outHistBayes1->SetLineColor(kBlue+3);
+outHistBayes1->Draw("same");
+outHistBayes2->SetLineWidth(3);
+outHistBayes2->SetLineStyle(kDotted);
+outHistBayes2->SetLineColor(kBlue);
+outHistBayes2->Draw("same");
+outHistBayes3->SetLineWidth(3);
+outHistBayes3->SetLineStyle(kDotted);
+outHistBayes3->SetLineColor(kBlue-7);
+outHistBayes3->Draw("same");
+outHistBayes4->SetLineWidth(3);
+outHistBayes4->SetLineStyle(kDotted);
+outHistBayes4->SetLineColor(kMagenta);
+outHistBayes4->Draw("same");
+outHistBayes5->SetLineWidth(3);
+outHistBayes5->SetLineStyle(kDotted);
+outHistBayes5->SetLineColor(kMagenta-9);
+outHistBayes5->Draw("same");
+outHistSvd2->SetLineWidth(3);
+outHistSvd2->SetLineStyle(kDotted);
+outHistSvd2->SetLineColor(kRed+2);
+outHistSvd2->Draw("same");
+outHistSvd5->SetLineWidth(3);
+outHistSvd5->SetLineStyle(kDotted);
+outHistSvd5->SetLineColor(kRed);
+outHistSvd5->Draw("same");
+outHistSvd8->SetLineWidth(3);
+outHistSvd8->SetLineStyle(kDotted);
+outHistSvd8->SetLineColor(kRed-9);
+outHistSvd8->Draw("same");
+outHistSvd10->SetLineWidth(3);
+outHistSvd10->SetLineStyle(kDotted);
+outHistSvd10->SetLineColor(kOrange);
+outHistSvd10->Draw("same");
+
+TLegend *leg = new TLegend(0.7,0.3,0.9,0.7,NULL,"brNDC");
+leg->SetTextFont(62);
+leg->SetLineColor(0);
+leg->SetLineStyle(1);
+leg->SetLineWidth(1);
+leg->SetFillColor(19);
+leg->SetFillStyle(0);
+TLegendEntry *entry=leg->AddEntry("inHistBkg","inHistBkg","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kSolid);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("inHist","inHist","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("outHistBinByBin","outHistBinByBin","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kGreen);
+entry=leg->AddEntry("outHistBayes1","outHistBayes1","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kBlue+3);
+entry=leg->AddEntry("outHistBayes2","outHistBayes2","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kBlue);
+entry=leg->AddEntry("outHistBayes3","outHistBayes3","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kBlue-7);
+entry=leg->AddEntry("outHistBayes4","outHistBayes4","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kMagenta);
+entry=leg->AddEntry("outHistBayes5","outHistBayes5","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kMagenta-9);
+entry=leg->AddEntry("outHistSvd2","outHistSvd2","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kRed+2);
+entry=leg->AddEntry("outHistSvd5","outHistSvd5","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kRed);
+entry=leg->AddEntry("outHistSvd8","outHistSvd8","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kRed-9);
+entry=leg->AddEntry("outHistSvd10","outHistSvd10","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kOrange);
+leg->Draw();
+
+zgD->Print("ZgUnfold_output_data.pdf");
+
+
+TCanvas *zgDM = new TCanvas("zgDM","zgDM",700,700);
+//zgDM->Divide(2,2);
+//zgDM->cd(1);
+gPad->SetLogx();
+inHistMassBkg->SetLineWidth(3);
+inHistMassBkg->SetLineStyle(kSolid);
+inHistMassBkg->SetLineColor(kBlack);
+inHistMassBkg->Draw();
+inHistMass->SetLineWidth(3);
+inHistMass->SetLineStyle(kDashed);
+inHistMass->SetLineColor(kBlack);
+inHistMass->Draw("same");
+outHistMassBinByBin->SetLineWidth(3);
+outHistMassBinByBin->SetLineStyle(kDashed);
+outHistMassBinByBin->SetLineColor(kGreen);
+outHistMassBinByBin->Draw("same");
+outHistMassBayes1->SetLineWidth(3);
+outHistMassBayes1->SetLineStyle(kDotted);
+outHistMassBayes1->SetLineColor(kBlue+3);
+outHistMassBayes1->Draw("same");
+outHistMassBayes2->SetLineWidth(3);
+outHistMassBayes2->SetLineStyle(kDotted);
+outHistMassBayes2->SetLineColor(kBlue);
+outHistMassBayes2->Draw("same");
+outHistMassBayes3->SetLineWidth(3);
+outHistMassBayes3->SetLineStyle(kDotted);
+outHistMassBayes3->SetLineColor(kBlue-7);
+outHistMassBayes3->Draw("same");
+outHistMassBayes4->SetLineWidth(3);
+outHistMassBayes4->SetLineStyle(kDotted);
+outHistMassBayes4->SetLineColor(kMagenta);
+outHistMassBayes4->Draw("same");
+outHistMassBayes5->SetLineWidth(3);
+outHistMassBayes5->SetLineStyle(kDotted);
+outHistMassBayes5->SetLineColor(kMagenta-9);
+outHistMassBayes5->Draw("same");
+outHistMassSvd2->SetLineWidth(3);
+outHistMassSvd2->SetLineStyle(kDotted);
+outHistMassSvd2->SetLineColor(kRed+2);
+outHistMassSvd2->Draw("same");
+outHistMassSvd5->SetLineWidth(3);
+outHistMassSvd5->SetLineStyle(kDotted);
+outHistMassSvd5->SetLineColor(kRed);
+outHistMassSvd5->Draw("same");
+outHistMassSvd8->SetLineWidth(3);
+outHistMassSvd8->SetLineStyle(kDotted);
+outHistMassSvd8->SetLineColor(kRed-9);
+outHistMassSvd8->Draw("same");
+outHistMassSvd10->SetLineWidth(3);
+outHistMassSvd10->SetLineStyle(kDotted);
+outHistMassSvd10->SetLineColor(kOrange);
+outHistMassSvd10->Draw("same");
+
+TLegend *leg = new TLegend(0.7,0.3,0.9,0.7,NULL,"brNDC");
+leg->SetTextFont(62);
+leg->SetLineColor(0);
+leg->SetLineStyle(1);
+leg->SetLineWidth(1);
+leg->SetFillColor(19);
+leg->SetFillStyle(0);
+TLegendEntry *entry=leg->AddEntry("inHistMassBkg","inHistMassBkg","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kSolid);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("inHistMass","inHistMass","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("outHistMassBinByBin","outHistMassBinByBin","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kGreen);
+entry=leg->AddEntry("outHistMassBayes1","outHistMassBayes1","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kBlue+3);
+entry=leg->AddEntry("outHistMassBayes2","outHistMassBayes2","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kBlue);
+entry=leg->AddEntry("outHistMassBayes3","outHistMassBayes3","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kBlue-7);
+entry=leg->AddEntry("outHistMassBayes4","outHistMassBayes4","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kMagenta);
+entry=leg->AddEntry("outHistMassBayes5","outHistMassBayes5","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kMagenta-9);
+entry=leg->AddEntry("outHistMassSvd2","outHistMassSvd2","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kRed+2);
+entry=leg->AddEntry("outHistMassSvd5","outHistMassSvd5","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kRed);
+entry=leg->AddEntry("outHistMassSvd8","outHistMassSvd8","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kRed-9);
+entry=leg->AddEntry("outHistMassSvd10","outHistMassSvd10","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDotted);
+entry->SetLineColor(kOrange);
+leg->Draw();
+
+zgDM->Print("ZgUnfold_outputMass_data.pdf");
 
 return 1;
 }
