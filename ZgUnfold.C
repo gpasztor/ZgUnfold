@@ -19,13 +19,17 @@
 #include "/opt/local/libexec/RooUnfold/src/RooUnfoldTUnfold.h"
 
 using namespace TMath;
+using namespace TRandom;
 
-int ZgUnfold(int channel=0, int errorTreatment=3, bool smooth=false, bool MCfake=false, bool useProcessID=true/*, bool doPt=true, bool doMass=true*/)
+int ZgUnfold(int channel=0, int errorTreatment=3, bool smooth=false, bool
+MCfake=false, bool useProcessID=true, int smear=0, int scale=1/*, bool doPt=true, bool doMass=true*/)
 {
 
 stringstream nameFragmSS;
-nameFragmSS << "_ch" << channel << "_err" << errorTreatment << "_sm" << smooth << "_MCf" << MCfake << "_PID" << useProcessID;
-cout << "_ch" << channel << "_err" << errorTreatment << "_sm" << smooth << "_MCf" << MCfake << "_PID" << useProcessID << endl;
+nameFragmSS << "_ch" << channel << "_err" << errorTreatment << "_sm" << smooth << "_MCf" << MCfake << "_PID" << useProcessID << "_smear"
+<< smear << "_scale" << scale;
+cout << "_ch" << channel << "_err" << errorTreatment << "_sm" << smooth << "_MCf" << MCfake << "_PID" << useProcessID << "_smear"
+<< smear << "_scale" << scale << endl;
 string nameFragm=nameFragmSS.str();
 cout << "nameFragm: " << nameFragm << endl;
 
@@ -224,12 +228,14 @@ for (int i=0;i<nMC;i++){
   inHistMCPhoBkg->Fill(Min((float)phoPtMC,(float)(xbinsD[nbinsDm]-0.1)),puwei*mcwei*genwei);
   if(phoPtMC>15) inHistMassMCPhoBkg->Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);  
   if(useProcessID && processID!=1) continue;
-  inHistMC->Fill(Min((float)phoPtMC,(float)(xbinsD[nbinsDm]-0.1)),puwei*mcwei*genwei);
+  if(smear==0 && scale==0) inHistMC->Fill(Min((float)phoPtMC,(float)(xbinsD[nbinsDm]-0.1)),puwei*mcwei*genwei);
+  else if(smear==0) inHistMC->Fill(Min((float)(phoPtMC*(1.+scale*0.01)),(float)(xbinsD[nbinsDm]-0.1)),puwei*mcwei*genwei);
+  else if(scale==0) inHistMC->Fill(Min((float)(phoPtMC+gRandom->Gaus(0,smear*0.01*phoPtMC)),(float)(xbinsD[nbinsDm]-0.1)),puwei*mcwei*genwei);
+  else inHistMC->Fill(Min((float)(phoPtMC+gRandom->Gaus(scale*0.01*phoPtMC,smear*0.01*phoPtMC)),(float)(xbinsD[nbinsDm]-0.1)),puwei*mcwei*genwei);
   trueHistMC->Fill(Min((float)mcPhoPtMC,(float)(xbinsMC[nbinsMCm]-0.1)),puwei*mcwei*genwei);
   responseMC->Fill(Min((float)phoPtMC,(float)(xbinsD[nbinsDm]-0.1)),Min((float)mcPhoPtMC,(float)(xbinsMC[nbinsMCm]-0.1)),puwei*mcwei*genwei);
   
   if(phoPtMC>15) {
-    inHistMassMC->Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);
     TLorentzVector mcLep1MC;
     mcLep1MC.SetPtEtaPhiM(mcLepPtMC[0], mcLepEtaMC[0], mcLepPhiMC[0], lepMass);
     TLorentzVector mcLep2MC;
@@ -242,17 +248,33 @@ for (int i=0;i<nMC;i++){
     responseMassMC->Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsMassDm]-0.1)),Min((float)mcPhoDiLep.M(),(float)(xbinsMassMC[nbinsMassMCm]-0.1)),puwei*mcwei*genwei);
 
     TLorentzVector lep1MC;
-    lep1MC.SetPtEtaPhiM(lepPtMC[0], lepEtaMC[0], lepPhiMC[0], lepMass);
     TLorentzVector lep2MC;
-    lep2MC.SetPtEtaPhiM(lepPtMC[1], lepEtaMC[1], lepPhiMC[1], lepMass);			
     TLorentzVector phoMC;
-    phoMC.SetPtEtaPhiM(phoPtMC, phoEtaMC, phoPhiMC, 0);
+    if(smear==0 && scale==0){ 
+      lep1MC.SetPtEtaPhiM(lepPtMC[0], lepEtaMC[0], lepPhiMC[0], lepMass);
+      lep2MC.SetPtEtaPhiM(lepPtMC[1], lepEtaMC[1], lepPhiMC[1], lepMass);			
+      phoMC.SetPtEtaPhiM(phoPtMC, phoEtaMC, phoPhiMC, 0);
+    } else if(smear==0) {
+      lep1MC.SetPtEtaPhiM(lepPtMC[0]*(1.+scale*0.01), lepEtaMC[0], lepPhiMC[0], lepMass);
+      lep2MC.SetPtEtaPhiM(lepPtMC[1]*(1.+scale*0.01), lepEtaMC[1], lepPhiMC[1], lepMass);			
+      phoMC.SetPtEtaPhiM(phoPtMC*(1.+scale*0.01), phoEtaMC, phoPhiMC, 0);
+    } else if(scale==0) {
+      lep1MC.SetPtEtaPhiM(lepPtMC[0]+gRandom->Gaus(0,smear*0.01*lepPtMC[0]), lepEtaMC[0], lepPhiMC[0], lepMass);
+      lep2MC.SetPtEtaPhiM(lepPtMC[1]+gRandom->Gaus(0,smear*0.01*lepPtMC[1]), lepEtaMC[1], lepPhiMC[1], lepMass);			
+      phoMC.SetPtEtaPhiM(phoPtMC+gRandom->Gaus(0,smear*0.01*phoPtMC), phoEtaMC, phoPhiMC, 0);
+    } else {
+      lep1MC.SetPtEtaPhiM(lepPtMC[0]+gRandom->Gaus(scale*0.01*lepPtMC[0],smear*0.01*lepPtMC[0]), lepEtaMC[0], lepPhiMC[0], lepMass);
+      lep2MC.SetPtEtaPhiM(lepPtMC[1]+gRandom->Gaus(scale*0.01*lepPtMC[1],smear*0.01*lepPtMC[1]), lepEtaMC[1], lepPhiMC[1], lepMass);			
+      phoMC.SetPtEtaPhiM(phoPtMC+gRandom->Gaus(scale*0.01*phoPtMC,smear*0.01*phoPtMC), phoEtaMC, phoPhiMC, 0);
+    }
     TLorentzVector diLepMC;
     diLepMC=lep1MC+lep2MC;
     TLorentzVector phoDiLepMC;
     phoDiLepMC=lep1MC+lep2MC+phoMC;
-
-    if((Abs(mllgMC-phoDiLepMC.M())/mllgMC) > 0.01) 
+    //inHistMassMC->Fill(Min((float)mllgMC,(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);
+    inHistMassMC->Fill(Min((float)phoDiLepMC.M(),(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);
+    
+    if(smear==0 && scale==0 && (Abs(mllgMC-phoDiLepMC.M())/mllgMC) > 0.01) 
       cout << Abs(mllgMC-phoDiLepMC.M())/mllgMC <<" mll: " << mllMC << "calc: " << diLepMC.M() << "mllg: " << mllgMC << "calc: " << phoDiLepMC.M() << endl;
 
     //histCheckMassMC->Fill(Min((float)phoDiLepMC.M(),(float)(xbinsMassD[nbinsMassDm]-0.1)),puwei*mcwei*genwei);
@@ -364,46 +386,126 @@ RooUnfoldSvd unfoldMassSvd10D(&responseMass,inHistMass,10);
 RooUnfoldSvd unfoldMassSvd10MC(&responseMass,inHistMassMC,10);
 
 TH1F* outHistBinByBin = (TH1F*) unfoldBinByBinD.Hreco(errorTreatment);
+outHistBinByBin -> SetName("outHistBinByBin");
+outHistBinByBin -> SetTitle("outHistBinByBin");
 TH1F* outHistBinByBinMC = (TH1F*) unfoldBinByBinMC.Hreco(errorTreatment);
+outHistBinByBinMC -> SetName("outHistBinByBinMC");
+outHistBinByBinMC -> SetTitle("outHistBinByBinMC");
 TH1F* outHistBayes1 = (TH1F*) unfoldBayes1D.Hreco(errorTreatment);
+outHistBayes1 -> SetName("outHistBayes1");
+outHistBayes1 -> SetTitle("outHistBayes1");
 TH1F* outHistBayes1MC = (TH1F*) unfoldBayes1MC.Hreco(errorTreatment);
+outHistBayes1MC -> SetName("outHistBayes1MC");
+outHistBayes1MC -> SetTitle("outHistBayes1MC");
 TH1F* outHistBayes2 = (TH1F*) unfoldBayes2D.Hreco(errorTreatment);
+outHistBayes2 -> SetName("outHistBayes2");
+outHistBayes2 -> SetTitle("outHistBayes2");
 TH1F* outHistBayes2MC = (TH1F*) unfoldBayes2MC.Hreco(errorTreatment);
+outHistBayes2MC -> SetName("outHistBayes2MC");
+outHistBayes2MC -> SetTitle("outHistBayes2MC");
 TH1F* outHistBayes3 = (TH1F*) unfoldBayes3D.Hreco(errorTreatment);
+outHistBayes3 -> SetName("outHistBayes3");
+outHistBayes3 -> SetTitle("outHistBayes3");
 TH1F* outHistBayes3MC = (TH1F*) unfoldBayes3MC.Hreco(errorTreatment);
+outHistBayes3MC -> SetName("outHistBayes3MC");
+outHistBayes3MC -> SetTitle("outHistBayes3MC");
 TH1F* outHistBayes4 = (TH1F*) unfoldBayes4D.Hreco(errorTreatment);
+outHistBayes4 -> SetName("outHistBayes4");
+outHistBayes4 -> SetTitle("outHistBayes4");
 TH1F* outHistBayes4MC = (TH1F*) unfoldBayes4MC.Hreco(errorTreatment);
+outHistBayes4MC -> SetName("outHistBayes4MC");
+outHistBayes4MC -> SetTitle("outHistBayes4MC");
 TH1F* outHistBayes5 = (TH1F*) unfoldBayes5D.Hreco(errorTreatment);
+outHistBayes5 -> SetName("outHistBayes5");
+outHistBayes5 -> SetTitle("outHistBayes5");
 TH1F* outHistBayes5MC = (TH1F*) unfoldBayes5MC.Hreco(errorTreatment);
+outHistBayes5MC -> SetName("outHistBayes5MC");
+outHistBayes5MC -> SetTitle("outHistBayes5MC");
 TH1F* outHistSvd2 = (TH1F*) unfoldSvd2D.Hreco(errorTreatment);
+outHistSvd2 -> SetName("outHistSvd2");
+outHistSvd2 -> SetTitle("outHistSvd2");
 TH1F* outHistSvd2MC = (TH1F*) unfoldSvd2MC.Hreco(errorTreatment);
+outHistSvd2MC -> SetName("outHistSvd2MC");
+outHistSvd2MC -> SetTitle("outHistSvd2MC");
 TH1F* outHistSvd5 = (TH1F*) unfoldSvd5D.Hreco(errorTreatment);
+outHistSvd5 -> SetName("outHistSvd5");
+outHistSvd5 -> SetTitle("outHistSvd5");
 TH1F* outHistSvd5MC = (TH1F*) unfoldSvd5MC.Hreco(errorTreatment);
+outHistSvd5MC -> SetName("outHistSvd5MC");
+outHistSvd5MC -> SetTitle("outHistSvd5MC");
 TH1F* outHistSvd8 = (TH1F*) unfoldSvd8D.Hreco(errorTreatment);
+outHistSvd8 -> SetName("outHistSvd8");
+outHistSvd8 -> SetTitle("outHistSvd8");
 TH1F* outHistSvd8MC = (TH1F*) unfoldSvd8MC.Hreco(errorTreatment);
+outHistSvd8MC -> SetName("outHistSvd8MC");
+outHistSvd8MC -> SetTitle("outHistSvd8MC");
 TH1F* outHistSvd10 = (TH1F*) unfoldSvd10D.Hreco(errorTreatment);
+outHistSvd10 -> SetName("outHistSvd10");
+outHistSvd10 -> SetTitle("outHistSvd10");
 TH1F* outHistSvd10MC = (TH1F*) unfoldSvd10MC.Hreco(errorTreatment);
+outHistSvd10MC -> SetName("outHistSvd10MC");
+outHistSvd10MC -> SetTitle("outHistSvd10MC");
 
 TH1F* outHistMassBinByBin = (TH1F*) unfoldMassBinByBinD.Hreco(errorTreatment);
+outHistMassBinByBin -> SetName("outHistMassBinByBin");
+outHistMassBinByBin -> SetTitle("outHistMassBinByBin");
 TH1F* outHistMassBinByBinMC = (TH1F*) unfoldMassBinByBinMC.Hreco(errorTreatment);
+outHistMassBinByBinMC -> SetName("outHistMassBinByBinMC");
+outHistMassBinByBinMC -> SetTitle("outHistMassBinByBinMC");
 TH1F* outHistMassBayes1 = (TH1F*) unfoldMassBayes1D.Hreco(errorTreatment);
+outHistMassBayes1 -> SetName("outHistMassBayes1");
+outHistMassBayes1 -> SetTitle("outHistMassBayes1");
 TH1F* outHistMassBayes1MC = (TH1F*) unfoldMassBayes1MC.Hreco(errorTreatment);
+outHistMassBayes1MC -> SetName("outHistMassBayes1MC");
+outHistMassBayes1MC -> SetTitle("outHistMassBayes1MC");
 TH1F* outHistMassBayes2 = (TH1F*) unfoldMassBayes2D.Hreco(errorTreatment);
+outHistMassBayes2 -> SetName("outHistMassBayes2");
+outHistMassBayes2 -> SetTitle("outHistMassBayes2");
 TH1F* outHistMassBayes2MC = (TH1F*) unfoldMassBayes2MC.Hreco(errorTreatment);
+outHistMassBayes2MC -> SetName("outHistMassBayes2MC");
+outHistMassBayes2MC -> SetTitle("outHistMassBayes2MC");
 TH1F* outHistMassBayes3 = (TH1F*) unfoldMassBayes3D.Hreco(errorTreatment);
+outHistMassBayes3 -> SetName("outHistMassBayes3");
+outHistMassBayes3 -> SetTitle("outHistMassBayes3");
 TH1F* outHistMassBayes3MC = (TH1F*) unfoldMassBayes3MC.Hreco(errorTreatment);
+outHistMassBayes3MC -> SetName("outHistMassBayes3MC");
+outHistMassBayes3MC -> SetTitle("outHistMassBayes3MC");
 TH1F* outHistMassBayes4 = (TH1F*) unfoldMassBayes4D.Hreco(errorTreatment);
+outHistMassBayes4 -> SetName("outHistMassBayes4");
+outHistMassBayes4 -> SetTitle("outHistMassBayes4");
 TH1F* outHistMassBayes4MC = (TH1F*) unfoldMassBayes4MC.Hreco(errorTreatment);
+outHistMassBayes4MC -> SetName("outHistMassBayes4MC");
+outHistMassBayes4MC -> SetTitle("outHistMassBayes4MC");
 TH1F* outHistMassBayes5 = (TH1F*) unfoldMassBayes5D.Hreco(errorTreatment);
+outHistMassBayes5 -> SetName("outHistMassBayes5");
+outHistMassBayes5 -> SetTitle("outHistMassBayes5");
 TH1F* outHistMassBayes5MC = (TH1F*) unfoldMassBayes5MC.Hreco(errorTreatment);
+outHistMassBayes5MC -> SetName("outHistMassBayes5MC");
+outHistMassBayes5MC -> SetTitle("outHistMassBayes5MC");
 TH1F* outHistMassSvd2 = (TH1F*) unfoldMassSvd2D.Hreco(errorTreatment);
+outHistMassSvd2 -> SetName("outHistMassSvd2");
+outHistMassSvd2 -> SetTitle("outHistMassSvd2");
 TH1F* outHistMassSvd2MC = (TH1F*) unfoldMassSvd2MC.Hreco(errorTreatment);
+outHistMassSvd2MC -> SetName("outHistMassSvd2MC");
+outHistMassSvd2MC -> SetTitle("outHistMassSvd2MC");
 TH1F* outHistMassSvd5 = (TH1F*) unfoldMassSvd5D.Hreco(errorTreatment);
+outHistMassSvd5 -> SetName("outHistMassSvd5");
+outHistMassSvd5 -> SetTitle("outHistMassSvd5");
 TH1F* outHistMassSvd5MC = (TH1F*) unfoldMassSvd5MC.Hreco(errorTreatment);
+outHistMassSvd5MC -> SetName("outHistMassSvd5MC");
+outHistMassSvd5MC -> SetTitle("outHistMassSvd5MC");
 TH1F* outHistMassSvd8 = (TH1F*) unfoldMassSvd8D.Hreco(errorTreatment);
+outHistMassSvd8 -> SetName("outHistMassSvd8");
+outHistMassSvd8 -> SetTitle("outHistMassSvd8");
 TH1F* outHistMassSvd8MC = (TH1F*) unfoldMassSvd8MC.Hreco(errorTreatment);
+outHistMassSvd8MC -> SetName("outHistMassSvd8MC");
+outHistMassSvd8MC -> SetTitle("outHistMassSvd8MC");
 TH1F* outHistMassSvd10 = (TH1F*) unfoldMassSvd10D.Hreco(errorTreatment);
+outHistMassSvd10 -> SetName("outHistMassSvd10");
+outHistMassSvd10 -> SetTitle("outHistMassSvd10");
 TH1F* outHistMassSvd10MC = (TH1F*) unfoldMassSvd10MC.Hreco(errorTreatment);
+outHistMassSvd10MC -> SetName("outHistMassSvd10MC");
+outHistMassSvd10MC -> SetTitle("outHistMassSvd10MC");
 
 //inHist - outHist divide
 
@@ -489,7 +591,75 @@ outHistMassSvd10Divide->Divide(outHistMassSvd10,inHistMass, 1., 1.);
 TH1F* outHistMassSvd10MCDivide = (TH1F*) outHistMassSvd10MC->Clone("outHistMassSvd10MCDivide");
 outHistMassSvd10MCDivide->Divide(outHistMassSvd10MC, inHistMassMC, 1., 1.);
 
+// Gauss smearing
+/*
+float MCSmearPlus=gRandom->Gaus(0.01*phoPtMC,0.01*phoPtMC);
+float phoPtMCSmearPlus=phoPtMC+MCSmearPlus;
+float MCSmearMinus=gRandom->Gaus(-0.01*phoPtMC,0.01*phoPtMC);
+float phoPtMCSmearMinus=phoPtMC+MCSmearMinus;
 
+MCSmearPlus=gRandom->Gaus(0.01*phoEtaMC,0.01*phoEtaMC);
+float phoEtaMCSmearPlus=phoEtaMC+MCSmearPlus;
+MCSmearMinus=gRandom->Gaus(-0.01*phoEtaMC,0.01*phoEtaMC);
+float phoEtaMCSmearMinus=phoEtaMC+MCSmearMinus;
+
+MCSmearPlus=gRandom->Gaus(0.01*phoSCEtaMC,0.01*phoSCEtaMC);
+float phoSCEtaMCSmearplus=phoSCEtaMC+MCSmearPlus;
+MCSmearMinus=gRandom->Gaus(-0.01*phoSCEtaMC,0.01*phoSCEtaMC);
+float phoSCEtaMCSmearMinus=phoSCEtaMC+MCSmearMinus;
+
+MCSmearPlus=gRandom->Gaus(0.01*phoPhiMC,0.01*phoPhiMC);
+float phoPhiMCSmearPlus=phoPhiMC+MCSmearPlus;
+MCSmearMinus=gRandom->Gaus(-0.01*phoPhiMC,0.01*phoPhiMC);
+float phoPhiMCSmearMinus=phoPhiMC+MCSmearMinus;
+
+float lepPtMCPlus[2], lepPtMCMinus[2], lepEtaMCPlus[2],lepEtaMCMinus[2],lepSCEtaMCPlus[2], lepSCEtaMCMinus[2],lepPhiMCPlus[2], lepPhiMCPlus[2];
+
+MCSmearPlus==gRandom->Gaus(0.01*lepPtMC[0],0.01*lepPtMC[0]);
+lepPtMCPlus[0]=lepPtMC+MCSmearPlus;
+MCSmearPlus==gRandom->Gaus(0.01*lepPtMC[1],0.01*lepPtMC[1]);
+lepPtMCPlus[1]=lepPtMC+MCSmearPlus;
+MCSmearMinus==gRandom->Gaus(-0.01*lepPtMC[0],0.01*lepPtMC[0]);
+lepPtMCMinus[0]=lepPtMC+MCSmearMinus;
+MCSmearMinus==gRandom->Gaus(-0.01*lepPtMC[1],0.01*lepPtMC[1]);
+lepPtMCMinus[1]=lepPtMC+MCSmearMinus;
+
+MCSmearPlus==gRandom->Gaus(0.01*lepEtaMC[0],0.01*lepEtaMC[0]);
+lepEtaMCPlus[0]=lepEtaMC+MCSmearPlus;
+MCSmearPlus==gRandom->Gaus(0.01*lepEtaMC[1],0.01*lepEtaMC[1]);
+lepEtaMCPlus[1]=lepEtaMC+MCSmearPlus;
+MCSmearMinus==gRandom->Gaus(-0.01*lepEtaMC[0],0.01*lepEtaMC[0]);
+lepEtaMCMinus[0]=lepEtaMC+MCSmearMinus;
+MCSmearMinus==gRandom->Gaus(-0.01*lepEtaMC[1],0.01*lepEtaMC[1]);
+lepEtaMCMinus[1]=lepEtaMC+MCSmearMinus;
+
+MCSmearPlus==gRandom->Gaus(0.01*lepSCEtaMC[0],0.01*lepSCEtaMC[0]);
+lepSCEtaMCPlus[0]=lepSCEtaMC+MCSmearPlus;
+MCSmearPlus==gRandom->Gaus(0.01*lepSCEtaMC[1],0.01*lepSCEtaMC[1]);
+lepSCEtaMCPlus[1]=lepSCEtaMC+MCSmearPlus;
+MCSmearMinus==gRandom->Gaus(-0.01*lepSCEtaMC[0],0.01*lepSCEtaMC[0]);
+lepSCEtaMCMinus[0]=lepSCEtaMC+MCSmearMinus;
+MCSmearMinus==gRandom->Gaus(-0.01*lepSCEtaMC[1],0.01*lepSCEtaMC[1]);
+lepSCEtaMCMinus[1]=lepSCEtaMC+MCSmearMinus;
+
+MCSmearPlus==gRandom->Gaus(0.01*lepPhiMC[0],0.01*lepPhiMC[0]);
+lepPhiMCPlus[0]=lepPhiMC+MCSmearPlus;
+MCSmearPlus==gRandom->Gaus(0.01*lepPhiMC[1],0.01*lepPhiMC[1]);
+lepPhiMClus[1]=lepPhiMC+MCSmearPlus;
+MCSmearMinus==gRandom->Gaus(-0.01*lepPhiMC[0],0.01*lepPhiMC[0]);
+lepPhiMCMinus[0]=lepPhiMC+MCSmearMinus;
+MCSmearMinus==gRandom->Gaus(-0.01*lepPhiMC[1],0.01*lepPhiMC[1]);
+lepPhiMCMinus[1]=lepPhiMC+MCSmearMinus;
+
+MCSmearPlus=gRandom->Gaus(0.01*mllgMC,0.01*mllgMC);
+float mllgMCPlus=mllgMC+MCSmearPlus;
+MCSmearMinus=gRandom->Gaus(-0.01*mllgMC,0.01*mllgMC);
+float mllgMCMinus=mllgMC+MCSmearMinus;
+MCSmearPlus=gRandom->Gaus(0.01*mllMC,0.01*mllMC);
+float mllMCPlus=mllMC+MCSmearPlus;
+MCSmearMinus=gRandom->Gaus(-0.01*mllMC,0.01*mllMC);
+float mllMCMinus=mllMC+MCSmearMinus;
+*/
 
 TCanvas *ZgIn = new TCanvas("ZgIn","ZgIn",700,500);
 ZgIn->Divide(3,2);
@@ -1494,6 +1664,7 @@ const char* tmpChar = tmpString.c_str();
 ZgMassDivideMC->Print(tmpChar);
 
 TDirectory *dir = gDirectory; 
+dir->ls();
 
 ofstream outTXT;
 string tmpString = "Histos"+nameFragm+".txt";
