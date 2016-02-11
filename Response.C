@@ -41,6 +41,11 @@ responseMC->GetXaxis()->SetNoExponent();
 responseMC->GetYaxis()->SetNoExponent(); 
 responseMC->Draw("COLZ"); 
 
+TLatex latex;
+latex.SetTextFont(62);
+latex.SetTextSize(0.055);    
+latex.DrawLatex(12,700,"CMS simulation internal");
+
 Resp->cd(3); 
 gPad->SetLogx();
 gPad->SetLogy();
@@ -70,6 +75,11 @@ responseMassMC->GetZaxis()->SetTitleSize(0.048);
 responseMassMC->GetXaxis()->SetNoExponent(); 
 responseMassMC->GetYaxis()->SetNoExponent(); 
 responseMassMC->Draw("COLZ"); 
+
+TLatex latex;
+latex.SetTextFont(62);
+latex.SetTextSize(0.055);    
+latex.DrawLatex(55,800,"CMS simulation internal");
 
 //TFile::Close("Histos_ch0_err3_sm0_MCf0_PID1_smear0_scale1.root"); 
 //delete file; 
@@ -106,6 +116,11 @@ responseMC->GetXaxis()->SetNoExponent();
 responseMC->GetYaxis()->SetNoExponent(); 
 responseMC->Draw("COLZ"); 
 
+TLatex latex;
+latex.SetTextFont(62);
+latex.SetTextSize(0.055);    
+latex.DrawLatex(12,700,"CMS simulation internal");
+
 Resp->cd(4); 
 gPad->SetLogx();
 gPad->SetLogy();
@@ -136,6 +151,10 @@ responseMassMC->GetXaxis()->SetNoExponent();
 responseMassMC->GetYaxis()->SetNoExponent(); 
 responseMassMC->Draw("COLZ"); 
 
+TLatex latex;
+latex.SetTextFont(62);
+latex.SetTextSize(0.055);    
+latex.DrawLatex(55,800,"CMS simulation internal");
 
 //TFile::Close("Histos_ch1_err3_sm0_MCf0_PID1_smear0_scale1.root"); 
 Resp->Print("Response.pdf"); 
