@@ -1,0 +1,228 @@
+{
+	
+gROOT->ForceStyle(); 
+gStyle->SetPadLeftMargin(0.18);
+gStyle->SetPadRightMargin(0.18);
+gStyle->SetPadBottomMargin(0.13);
+gStyle->SetOptStat(0);
+
+
+TCanvas *trueH= new TCanvas ("trueH", "trueH", 700, 700);
+trueH->Divide(2,2);
+
+TFile *file=0;
+file=TFile::Open("Histos_ch0_err3_sm0_MCf0_PID1_smear0_scale0.root");
+
+trueH->cd(1);
+gPad->SetLogx();
+gPad->SetLogy();
+gPad->SetTicks();
+trueHistMC->SetTitle("Electron channel");
+trueHistMC->SetLineWidth(2);
+trueHistMC->SetLineStyle(kSolid);
+trueHistMC->SetLineColor(kBlack);
+trueHistMC->GetXaxis()->SetTitle("True photon p_{T} [GeV]"); 
+trueHistMC->GetYaxis()->SetTitle("Entries"); 
+trueHistMC->GetXaxis()->SetMoreLogLabels(); 
+trueHistMC->GetYaxis()->SetMoreLogLabels(); 
+trueHistMC->GetXaxis()->SetTitleOffset(1.3); 
+trueHistMC->GetYaxis()->SetTitleOffset(1.7); 
+trueHistMC->GetXaxis()->SetLabelFont(62); 
+trueHistMC->GetYaxis()->SetLabelFont(62); 
+trueHistMC->GetXaxis()->SetTitleFont(62); 
+trueHistMC->GetYaxis()->SetTitleFont(62); 
+trueHistMC->GetXaxis()->SetLabelSize(0.045); 
+trueHistMC->GetYaxis()->SetLabelSize(0.045); 
+trueHistMC->GetXaxis()->SetTitleSize(0.048); 
+trueHistMC->GetYaxis()->SetTitleSize(0.048); 
+trueHistMC->GetXaxis()->SetNoExponent(); 
+trueHistMC->GetYaxis()->SetNoExponent(); 
+trueHistMC->Draw();
+outHistBayes4MC->SetLineWidth(2);
+outHistBayes4MC->SetLineStyle(kDashed);
+outHistBayes4MC->SetLineColor(kRed);
+outHistBayes4MC->Draw("same");
+
+TLatex latex;
+latex.SetTextFont(62);
+latex.SetTextSize(0.045);    
+latex.DrawLatex(23,1900,"CMS simulation internal");
+
+TLegend *leg = new TLegend(0.3,0.2,0.68,0.35,NULL,"brNDC");
+leg->SetTextFont(62);
+leg->SetLineColor(0);
+leg->SetLineStyle(1);
+leg->SetLineWidth(1);
+leg->SetFillColor(19);
+leg->SetFillStyle(0);
+TLegendEntry *entry=leg->AddEntry("trueHistMC","trueHistMC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kSolid);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("outHistBayes4MC","outHistBayes4MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kRed);
+leg->Draw();
+
+trueH->cd(3);
+gPad->SetLogx();
+gPad->SetLogy();
+gPad->SetTicks();
+trueHistMassMC->SetTitle("Electron channel");
+trueHistMassMC->SetLineWidth(2);
+trueHistMassMC->SetLineStyle(kSolid);
+trueHistMassMC->SetLineColor(kBlack);
+trueHistMassMC->GetXaxis()->SetTitle("True ll#gamma mass [GeV]"); 
+trueHistMassMC->GetYaxis()->SetTitle("Entries"); 
+trueHistMassMC->GetXaxis()->SetMoreLogLabels(); 
+trueHistMassMC->GetYaxis()->SetMoreLogLabels(); 
+trueHistMassMC->GetXaxis()->SetTitleOffset(1.3); 
+trueHistMassMC->GetYaxis()->SetTitleOffset(1.7); 
+trueHistMassMC->GetXaxis()->SetLabelFont(62); 
+trueHistMassMC->GetYaxis()->SetLabelFont(62); 
+trueHistMassMC->GetXaxis()->SetTitleFont(62); 
+trueHistMassMC->GetYaxis()->SetTitleFont(62); 
+trueHistMassMC->GetXaxis()->SetLabelSize(0.045); 
+trueHistMassMC->GetYaxis()->SetLabelSize(0.045); 
+trueHistMassMC->GetXaxis()->SetTitleSize(0.048); 
+trueHistMassMC->GetYaxis()->SetTitleSize(0.048); 
+trueHistMassMC->GetXaxis()->SetNoExponent(); 
+trueHistMassMC->GetYaxis()->SetNoExponent(); 
+trueHistMassMC->Draw();
+outHistMassBayes4MC->SetLineWidth(2);
+outHistMassBayes4MC->SetLineStyle(kDashed);
+outHistMassBayes4MC->SetLineColor(kRed);
+outHistMassBayes4MC->Draw("same");
+
+TLatex latex;
+latex.SetTextFont(62);
+latex.SetTextSize(0.045);    
+latex.DrawLatex(87,1900,"CMS simulation internal");
+
+TLegend *leg = new TLegend(0.3,0.2,0.8,0.35,NULL,"brNDC");
+leg->SetTextFont(62);
+leg->SetLineColor(0);
+leg->SetLineStyle(1);
+leg->SetLineWidth(1);
+leg->SetFillColor(19);
+leg->SetFillStyle(0);
+TLegendEntry *entry=leg->AddEntry("trueHistMassMC","trueHistMassMC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kSolid);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("outHistMassBayes4MC","outHistMassBayes4MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kRed);
+leg->Draw();
+
+
+file=TFile::Open("Histos_ch1_err3_sm0_MCf0_PID1_smear0_scale0.root");
+
+trueH->cd(2);
+gPad->SetLogx();
+gPad->SetLogy();
+gPad->SetTicks();
+trueHistMC->SetTitle("Muon channel");
+trueHistMC->SetLineWidth(2);
+trueHistMC->SetLineStyle(kSolid);
+trueHistMC->SetLineColor(kBlack);
+trueHistMC->GetXaxis()->SetTitle("True photon p_{T} [GeV]"); 
+trueHistMC->GetYaxis()->SetTitle("Entries"); 
+trueHistMC->GetXaxis()->SetMoreLogLabels(); 
+trueHistMC->GetYaxis()->SetMoreLogLabels(); 
+trueHistMC->GetXaxis()->SetTitleOffset(1.3); 
+trueHistMC->GetYaxis()->SetTitleOffset(1.7); 
+trueHistMC->GetXaxis()->SetLabelFont(62); 
+trueHistMC->GetYaxis()->SetLabelFont(62); 
+trueHistMC->GetXaxis()->SetTitleFont(62); 
+trueHistMC->GetYaxis()->SetTitleFont(62); 
+trueHistMC->GetXaxis()->SetLabelSize(0.045); 
+trueHistMC->GetYaxis()->SetLabelSize(0.045); 
+trueHistMC->GetXaxis()->SetTitleSize(0.048); 
+trueHistMC->GetYaxis()->SetTitleSize(0.048); 
+trueHistMC->GetXaxis()->SetNoExponent(); 
+trueHistMC->GetYaxis()->SetNoExponent(); 
+trueHistMC->Draw();
+outHistBayes4MC->SetLineWidth(2);
+outHistBayes4MC->SetLineStyle(kDashed);
+outHistBayes4MC->SetLineColor(kRed);
+outHistBayes4MC->Draw("same");
+
+TLatex latex;
+latex.SetTextFont(62);
+latex.SetTextSize(0.045);    
+latex.DrawLatex(23,2800,"CMS simulation internal");
+
+TLegend *leg = new TLegend(0.3,0.2,0.68,0.35,NULL,"brNDC");
+leg->SetTextFont(62);
+leg->SetLineColor(0);
+leg->SetLineStyle(1);
+leg->SetLineWidth(1);
+leg->SetFillColor(19);
+leg->SetFillStyle(0);
+TLegendEntry *entry=leg->AddEntry("trueHistMC","trueHistMC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kSolid);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("outHistBayes4MC","outHistBayes4MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kRed);
+leg->Draw();
+
+trueH->cd(4);
+gPad->SetLogx();
+gPad->SetLogy();
+gPad->SetTicks();
+trueHistMassMC->SetTitle("Muon channel");
+trueHistMassMC->SetLineWidth(2);
+trueHistMassMC->SetLineStyle(kSolid);
+trueHistMassMC->SetLineColor(kBlack);
+trueHistMassMC->GetXaxis()->SetTitle("True ll#gamma mass [GeV]"); 
+trueHistMassMC->GetYaxis()->SetTitle("Entries"); 
+trueHistMassMC->GetXaxis()->SetMoreLogLabels(); 
+trueHistMassMC->GetYaxis()->SetMoreLogLabels(); 
+trueHistMassMC->GetXaxis()->SetTitleOffset(1.3); 
+trueHistMassMC->GetYaxis()->SetTitleOffset(1.7); 
+trueHistMassMC->GetXaxis()->SetLabelFont(62); 
+trueHistMassMC->GetYaxis()->SetLabelFont(62); 
+trueHistMassMC->GetXaxis()->SetTitleFont(62); 
+trueHistMassMC->GetYaxis()->SetTitleFont(62); 
+trueHistMassMC->GetXaxis()->SetLabelSize(0.045); 
+trueHistMassMC->GetYaxis()->SetLabelSize(0.045); 
+trueHistMassMC->GetXaxis()->SetTitleSize(0.048); 
+trueHistMassMC->GetYaxis()->SetTitleSize(0.048); 
+trueHistMassMC->GetXaxis()->SetNoExponent(); 
+trueHistMassMC->GetYaxis()->SetNoExponent(); 
+trueHistMassMC->Draw();
+outHistMassBayes4MC->SetLineWidth(2);
+outHistMassBayes4MC->SetLineStyle(kDashed);
+outHistMassBayes4MC->SetLineColor(kRed);
+outHistMassBayes4MC->Draw("same");
+
+TLatex latex;
+latex.SetTextFont(62);
+latex.SetTextSize(0.045);    
+latex.DrawLatex(87,3600,"CMS simulation internal");
+
+TLegend *leg = new TLegend(0.3,0.2,0.8,0.35,NULL,"brNDC");
+leg->SetTextFont(62);
+leg->SetLineColor(0);
+leg->SetLineStyle(1);
+leg->SetLineWidth(1);
+leg->SetFillColor(19);
+leg->SetFillStyle(0);
+TLegendEntry *entry=leg->AddEntry("trueHistMassMC","trueHistMassMC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kSolid);
+entry->SetLineColor(kBlack);
+entry=leg->AddEntry("outHistMassBayes4MC","outHistMassBayes4MC","L");
+entry->SetLineWidth(3);
+entry->SetLineStyle(kDashed);
+entry->SetLineColor(kRed);
+leg->Draw();
+
+trueH->Print("trueH.pdf");
+}
