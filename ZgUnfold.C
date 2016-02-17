@@ -22,14 +22,14 @@ using namespace TMath;
 using namespace TRandom;
 
 int ZgUnfold(int channel=0, int errorTreatment=3, bool smooth=false, bool
-MCfake=false, bool useProcessID=true, int smear=0, int scale=1/*, bool doPt=true, bool doMass=true*/)
+MCfake=false, bool useProcessID=true, int smear=0, int scale=0/*, bool doPt=true, bool doMass=true*/)
 {
 
 stringstream nameFragmSS;
 nameFragmSS << "_ch" << channel << "_err" << errorTreatment << "_sm" << smooth << "_MCf" << MCfake << "_PID" << useProcessID << "_smear"
 << smear << "_scale" << scale;
 cout << "_ch" << channel << "_err" << errorTreatment << "_sm" << smooth << "_MCf" << MCfake << "_PID" << useProcessID << "_smear"
-<< smear << "_scale" << scale << endl;
+<< smear << "_scale" << scale << "_NewMassBins" << endl;
 string nameFragm=nameFragmSS.str();
 cout << "nameFragm: " << nameFragm << endl;
 
@@ -83,10 +83,16 @@ if(MCfake){
 }
 cout << "fakeRateB0: " << fakeRateB0[0] << " " << fakeRateB0[1] << endl; 
 
+/*
 const int nbinsMassD= 12;
 const int nbinsMassMC = 12;
 const float xbinsMassD[nbinsMassD]={50,60,70,80,90,100,125,150,200,300,500,1000};
 const float xbinsMassMC[nbinsMassMC] = {50,60,70,80,90,100,125,150,200,300,500,1000};
+*/
+const int nbinsMassD= 16;
+const int nbinsMassMC = 16;
+const float xbinsMassD[nbinsMassD]={50,60,70,80,85,90,95,110,125,140,160,190,230,300,500,1000};
+const float xbinsMassMC[nbinsMassMC] = {50,60,70,80,85,90,95,110,125,140,160,190,230,300,500,1000};
 const int nbinsMassDm = nbinsMassD-1;
 const int nbinsMassMCm = nbinsMassMC-1;
 
