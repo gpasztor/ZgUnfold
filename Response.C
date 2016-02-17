@@ -81,9 +81,6 @@ latex.SetTextFont(62);
 latex.SetTextSize(0.055);    
 latex.DrawLatex(55,800,"CMS simulation internal");
 
-//TFile::Close("Histos_ch0_err3_sm0_MCf0_PID1_smear0_scale1.root"); 
-//delete file; 
-
 file=TFile::Open("Histos_ch1_err3_sm0_MCf0_PID1_smear0_scale0.root"); 
 
 Resp->cd(2); 
@@ -156,6 +153,5 @@ latex.SetTextFont(62);
 latex.SetTextSize(0.055);    
 latex.DrawLatex(55,800,"CMS simulation internal");
 
-//TFile::Close("Histos_ch1_err3_sm0_MCf0_PID1_smear0_scale1.root"); 
 Resp->Print("Response.pdf"); 
 }

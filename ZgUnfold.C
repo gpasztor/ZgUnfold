@@ -27,7 +27,7 @@ MCfake=false, bool useProcessID=true, int smear=0, int scale=0/*, bool doPt=true
 
 stringstream nameFragmSS;
 nameFragmSS << "_ch" << channel << "_err" << errorTreatment << "_sm" << smooth << "_MCf" << MCfake << "_PID" << useProcessID << "_smear"
-<< smear << "_scale" << scale;
+<< smear << "_scale" << scale << "_NewMassBins";
 cout << "_ch" << channel << "_err" << errorTreatment << "_sm" << smooth << "_MCf" << MCfake << "_PID" << useProcessID << "_smear"
 << smear << "_scale" << scale << "_NewMassBins" << endl;
 string nameFragm=nameFragmSS.str();
@@ -93,6 +93,7 @@ const int nbinsMassD= 16;
 const int nbinsMassMC = 16;
 const float xbinsMassD[nbinsMassD]={50,60,70,80,85,90,95,110,125,140,160,190,230,300,500,1000};
 const float xbinsMassMC[nbinsMassMC] = {50,60,70,80,85,90,95,110,125,140,160,190,230,300,500,1000};
+
 const int nbinsMassDm = nbinsMassD-1;
 const int nbinsMassMCm = nbinsMassMC-1;
 
